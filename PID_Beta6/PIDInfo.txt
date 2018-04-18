@@ -1,0 +1,4 @@
+
+Arduino PID Library Beta6 by Brett Beauregard
+
+For updated versions and information see http://www.arduino.cc/playground/Code/PIDLibrary
