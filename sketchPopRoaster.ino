@@ -22,7 +22,7 @@ const int computer = 1;
  ****************************************************************************/
 
 // set pin numbers:
-const int pwmPin =  11;         // digital pin for pulse width modulation of heater
+const int pwmPin =  A0;         // analogic pin for pulse width modulation of heater
 
 // thermocouple reading Max 6675 pins
 Max6675 therm2(6, 7, 8);
@@ -40,8 +40,8 @@ const int timePeriod = 2000;           // total time period of PWM milliseconds 
 const int tcTimePeriod = 250;         // 250 ms loop to read thermocouples
 
 // thermocouple settings
-float calibrate1 = 0.0;	// Temperature compensation for T1
-float calibrate2 = 0.0;	// Temperature compensation for T2
+float calibrate1 = 0.0; // Temperature compensation for T1
+float calibrate2 = 0.0; // Temperature compensation for T2
 
 // PID variables - initial values just guesses, actual values set by computer
 double pidSetpoint, pidInput, pidOutput;
@@ -94,8 +94,9 @@ void setup()
   //Set up pin VCC1, VCC2, GND2 and GNDRelé
   pinMode(2, OUTPUT); digitalWrite(2, HIGH);
   pinMode(9, OUTPUT); digitalWrite(9, HIGH);
-  pinMode(10, OUTPUT); digitalWrite(10, LOW);
-  pinMode(12, OUTPUT); digitalWrite(12, LOW); 
+  pinMode(10, OUTPUT); digitalWrite(10, HIGH); // SSR rele +
+  pinMode(12, OUTPUT); digitalWrite(12, LOW); // SSR rele -
+
   //set up the PID
   pidInput = 0;                        // for testing start with temperature of 0
   pidSetpoint = 222;                   // default if not connected to computer
@@ -119,7 +120,7 @@ void setup()
  ****************************************************************************/
 void setupPWM() {
   // set the digital pin as output:
-  pinMode(pwmPin, OUTPUT);      
+  pinMode(pwmPin, OUTPUT);
 
   //setup PWM
   lastTimePeriod = millis();
@@ -330,7 +331,7 @@ void getTemperatures()
 {
  
  temp1 = therm1.getCelsius();
- temp2 = therm2.getCelsius();	 
+ temp2 = therm2.getCelsius();
   
  if (temp1 > 0.0) 
  {
@@ -415,5 +416,3 @@ void loop(){
   doPWM();        // Toggle heater on/off based on power setting
 
 }
-
-
