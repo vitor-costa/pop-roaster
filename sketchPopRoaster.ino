@@ -157,9 +157,9 @@ void doPWM()
  
  if (millis() - lastTimePeriod > timePeriod) lastTimePeriod = millis();
  if (millis() - lastTimePeriod < timeOn){
-      digitalWrite(pwmPin, HIGH); // turn on 
+      digitalWrite(pwmPin, LOW); // turn on
   } else {
-      digitalWrite(pwmPin, LOW); // turn off    
+      digitalWrite(pwmPin, HIGH); // turn off
  }
  
 }
