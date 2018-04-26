@@ -10,6 +10,11 @@
 const int arduino = 0;                // either overridden if power pot is set below 97% to power pot control
 const int computer = 1;              
 
+// if using only one thermocouple, PID data source is thermocouple 1
+// if using two thermocouples, PID data source is thermocouple 2
+// default to use one thermocouple
+const bool useSecondThermocouple = false;
+
 /****************************************************************************
  * 
  * Arduino pin assignments
@@ -212,9 +217,12 @@ void doInputCommand()
         setPowerLevel((long) v);//convert v to integer for power 
                 
       } else
-      if (key.equals("sett2")){ // set PID setpoint to T2 value
+      if (useSecondThermocouple && key.equals("sett2")){ // set PID setpoint to T2 value
         pidSetpoint = v;
         
+      } else
+      if (!useSecondThermocouple && key.equals("sett1")) { // set PID setpoint to T1 value
+        pidSetpoint = v;
       } else
       if (key.equals("pidbias")) { // set pid bias default is 0%
         pidBias = v;
@@ -293,10 +301,11 @@ void doSerialOutput()
    
   Serial.print("t1=");
   Serial.println(tt1,DP);
-  
-  //Comment out the next two lines if using only one thermocouple
-  Serial.print("t2=");
-  Serial.println(tt2,DP);
+
+  if (useSecondThermocouple) {
+    Serial.print("t2=");
+    Serial.println(tt2,DP);
+  }
 
   Serial.print("power%=");
   Serial.println(power);
@@ -305,8 +314,13 @@ void doSerialOutput()
   // only need to send these if Arduino controlling by PID
   if (controlBy == arduino)
   {
-    Serial.print("targett2=");
-    Serial.println(pidSetpoint,DP);
+    if (useSecondThermocouple) {
+      Serial.print("targett2=");
+      Serial.println(pidSetpoint,DP);
+    } else {
+      Serial.print("targett1=");
+      Serial.println(pidSetpoint,DP);
+    }
 
     Serial.print("pidP=");
     Serial.println(pidP,DP);
@@ -351,13 +365,17 @@ void getTemperatures()
 ****************************************************************************/
 void updatePID(){
 
-   pidInput = t2;
-   
-   myPID.SetTunings(pidP,pidI,pidD);
- 
-   myPID.Compute();
+  if (useSecondThermocouple) {
+    pidInput = t2;
+  } else {
+    pidInput = t1;
+  }
 
-   setPowerLevel(pidOutput); // range set in setup to 0 - 100%
+  myPID.SetTunings(pidP,pidI,pidD);
+ 
+  myPID.Compute();
+
+  setPowerLevel(pidOutput); // range set in setup to 0 - 100%
 }
 
 /****************************************************************************
