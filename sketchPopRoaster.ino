@@ -27,7 +27,7 @@ const bool useSecondThermocouple = false;
  ****************************************************************************/
 
 // set pin numbers:
-const int pwmPin =  A0;         // analogic pin for pulse width modulation of heater
+const int pwmPin =  11;         // pin for pulse width modulation of heater
 
 // thermocouple reading Max 6675 pins
 Max6675 therm2(6, 7, 8);
@@ -99,7 +99,6 @@ void setup()
   //Set up pin VCC1, VCC2, GND2 and GNDRelé
   pinMode(2, OUTPUT); digitalWrite(2, HIGH);
   pinMode(9, OUTPUT); digitalWrite(9, HIGH);
-  pinMode(10, OUTPUT); digitalWrite(10, HIGH); // SSR rele +
   pinMode(12, OUTPUT); digitalWrite(12, LOW); // SSR rele -
 
   //set up the PID
@@ -129,7 +128,7 @@ void setupPWM() {
 
   //setup PWM
   lastTimePeriod = millis();
-  digitalWrite(pwmPin, HIGH);//set PWM pin on to start
+  digitalWrite(pwmPin, LOW);//set PWM pin off to start
 }
 
 // this not currently used
@@ -162,9 +161,9 @@ void doPWM()
  
  if (millis() - lastTimePeriod > timePeriod) lastTimePeriod = millis();
  if (millis() - lastTimePeriod < timeOn){
-      digitalWrite(pwmPin, LOW); // turn on
+      digitalWrite(pwmPin, HIGH); // turn on
   } else {
-      digitalWrite(pwmPin, HIGH); // turn off
+      digitalWrite(pwmPin, LOW); // turn off
  }
  
 }
