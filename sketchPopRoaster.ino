@@ -7,6 +7,8 @@
 
 #define maxLength 30                  // maximum length for strings used
 
+#define FAN_PIN 9 // pin used on mosfet gate that will control fan
+
 const int arduino = 0;                // either overridden if power pot is set below 97% to power pot control
 const int computer = 1;              
 
@@ -84,6 +86,8 @@ int  timeOn;                          // millis PWM is on out of total of timePe
 unsigned long lastTimePeriod;         // millis since last turned on pwm
 int power = 100;                      //use as %, 100 is always on, 0 always off default 100
 
+int fan = 0;
+
 int controlBy = arduino;              // default is arduino control. PC sends "pccontrol" to gain control or
                                       // swapped back to Arduino control if PC sends "arduinocontrol"
 
@@ -98,8 +102,10 @@ void setup()
  
   //Set up pin VCC1, VCC2, GND2 and GNDRelé
   pinMode(2, OUTPUT); digitalWrite(2, HIGH);
-  pinMode(9, OUTPUT); digitalWrite(9, HIGH);
   pinMode(12, OUTPUT); digitalWrite(12, LOW); // SSR rele -
+
+  //Set up fan pin
+  pinMode(FAN_PIN, OUTPUT); analogWrite(FAN_PIN, 0);
 
   //set up the PID
   pidInput = 0;                        // for testing start with temperature of 0
@@ -178,6 +184,24 @@ void setPowerLevel(int p)
 }
 
 /****************************************************************************
+ * Called to set fan power level.
+ ****************************************************************************/
+void setFanLevel(int p)
+{
+   if (p > -1 && p < 101) fan = p;
+}
+
+void doFanAjustment()
+{
+   if (fan == 0) {
+      analogWrite(FAN_PIN, 0);
+   } else
+   if (fan > 0 && fan <= 100) {
+      analogWrite(FAN_PIN, 255 * (fan / 100));
+   }
+}
+
+/****************************************************************************
  * Called when an input string is received from computer
  * designed for key=value pairs or simple text commands. 
  * Performs commands and splits key and value 
@@ -235,6 +259,9 @@ void doInputCommand()
       } else
       if (key.equals("pidd")) { 
         pidD = v;
+      } else
+      if (key.equals("fan")) {
+        setFanLevel((long) v); //convert v to integer for fan
       }
     }
   }
@@ -431,5 +458,6 @@ void loop(){
   }
 
   doPWM();        // Toggle heater on/off based on power setting
+  doFanAjustment(); // Set fan level according to value received from serial
 
 }
