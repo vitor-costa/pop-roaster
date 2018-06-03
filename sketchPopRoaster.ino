@@ -197,7 +197,8 @@ void doFanAjustment()
       analogWrite(FAN_PIN, 0);
    } else
    if (fan > 0 && fan <= 100) {
-      analogWrite(FAN_PIN, 255 * (fan / 100));
+        double fanStep = 1.5;
+        analogWrite(FAN_PIN, 105 + (fanStep * fan));
    }
 }
 
@@ -335,6 +336,9 @@ void doSerialOutput()
 
   Serial.print("power%=");
   Serial.println(power);
+
+  Serial.print("fan%=");
+  Serial.println(fan);
   
 
   // only need to send these if Arduino controlling by PID
