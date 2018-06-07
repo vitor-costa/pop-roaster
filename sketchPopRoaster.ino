@@ -43,7 +43,7 @@ Max6675 therm1(3, 4, 5);
 
 
 // time constants
-const int timePeriod = 30;           // total time period of PWM milliseconds see note on setupPWM before changing
+const int timePeriod = 200;           // total time period of PWM milliseconds see note on setupPWM before changing
 const int tcTimePeriod = 250;         // 250 ms loop to read thermocouples
 
 // thermocouple settings
