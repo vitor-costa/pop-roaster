@@ -1,5 +1,5 @@
 
-#include <PID_Beta6.h>                // include the PID library
+#include <PID_v1.h>                // include the PID library
 #include "Max6675.h"
 
 #define CELSIUS //RoastLogger default is Celsius - To output data in Fahrenheit comment out this one line 
@@ -52,13 +52,12 @@ float calibrate2 = 0.0; // Temperature compensation for T2
 
 // PID variables - initial values just guesses, actual values set by computer
 double pidSetpoint, pidInput, pidOutput;
-double pidBias = 0;
 double pidP = 20.0;
 double pidI = 45.0;
 double pidD = 10.0;
 
 //Specify the links and initial tuning parameters (last three are P I and D values)
-PID myPID(&pidInput, &pidOutput, &pidSetpoint, &pidBias, pidP, pidI, pidD);
+PID myPID(&pidInput, &pidOutput, &pidSetpoint, pidP, pidI, pidD, DIRECT);
 
 
 // set global variables
@@ -111,10 +110,9 @@ void setup()
   pidInput = 0;                        // for testing start with temperature of 0
   pidSetpoint = 222;                   // default if not connected to computer
   myPID.SetOutputLimits(0,100);        // set output range 0 - 100 %
-  myPID.SetInputLimits(0,250);         // 0 - 250 degrees C
   myPID.SetSampleTime(2000);           // set 2 second sample time for pID so equal to PWM cycle time
   //turn the PID on
-  myPID.SetMode(AUTO);  
+  myPID.SetMode(AUTOMATIC);
   
   Serial.println("Reset");            // flag that Arduino has reset used for debugging 
 }
@@ -248,10 +246,6 @@ void doInputCommand()
       if (!useSecondThermocouple && key.equals("sett1")) { // set PID setpoint to T1 value
         pidSetpoint = v;
       } else
-      if (key.equals("pidbias")) { // set pid bias default is 0%
-        pidBias = v;
-        myPID.Reset();// this resets the PID deleting any accumulated error
-      } else
       if (key.equals("pidp")) { 
         pidP = v;
       } else
@@ -360,9 +354,6 @@ void doSerialOutput()
 
     Serial.print("pidD=");
     Serial.println(pidD,DP);
-
-    Serial.print("pidBias=");
-    Serial.println(pidBias,DP);
   }
 }
 
