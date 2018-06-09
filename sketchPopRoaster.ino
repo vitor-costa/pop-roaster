@@ -10,7 +10,9 @@
 #define FAN_PIN 9 // pin used on mosfet gate that will control fan
 
 const int arduino = 0;                // either overridden if power pot is set below 97% to power pot control
-const int computer = 1;              
+const int computer = 1;
+
+const int pidMode = 1; // On PID mode the power range is limited for better response; Turn PID mode off for manual control
 
 // if using only one thermocouple, PID data source is thermocouple 1
 // if using two thermocouples, PID data source is thermocouple 2
@@ -178,7 +180,34 @@ void doPWM()
  ****************************************************************************/
 void setPowerLevel(int p)
 {
-   if (p > -1 && p < 101) power = p;
+    // limit power range to better ajustments
+    // limitting power range by bean temperature
+    if (controlBy == computer && pidMode) {
+      int minPower = 20; // default
+      int maxPower = 80; // default
+      if (t1 < 100.0) {
+        // using default minPower
+        maxPower = 70;
+      } else if (t1 < 140.0) {
+        minPower = 25;
+        maxPower = 75;
+      } else if (t1 < 180.0) {
+        minPower = 30;
+        maxPower = 80;
+      } else {
+        minPower = 35;
+        // using default maxPower
+      }
+
+      if (p < 20) {
+        p = 20;
+      }
+      if (p > 80) {
+        p = 80;
+      }
+    }
+
+    if (p > -1 && p < 101) power = p;
 }
 
 /****************************************************************************
@@ -326,6 +355,12 @@ void doSerialOutput()
   if (useSecondThermocouple) {
     Serial.print("t2=");
     Serial.println(tt2,DP);
+  }
+
+  if (controlBy == computer) {
+    // sending real heat power as t2 for reference
+    Serial.print("t2=");
+    Serial.println(power);
   }
 
   Serial.print("power%=");
