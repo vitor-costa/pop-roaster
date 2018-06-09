@@ -110,7 +110,7 @@ void setup()
   pidInput = 0;                        // for testing start with temperature of 0
   pidSetpoint = 222;                   // default if not connected to computer
   myPID.SetOutputLimits(0,100);        // set output range 0 - 100 %
-  myPID.SetSampleTime(2000);           // set 2 second sample time for pID so equal to PWM cycle time
+  myPID.SetSampleTime(1000);           // set 1 second sample time for pID so it can react at a fast pace to pwm heater
   //turn the PID on
   myPID.SetMode(AUTOMATIC);
   
