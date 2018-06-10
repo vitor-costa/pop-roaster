@@ -45,7 +45,7 @@ Max6675 therm1(3, 4, 5);
 
 
 // time constants
-const int timePeriod = 200;           // total time period of PWM milliseconds see note on setupPWM before changing
+const int timePeriod = 400;           // total time period of PWM milliseconds see note on setupPWM before changing
 const int tcTimePeriod = 250;         // 250 ms loop to read thermocouples
 
 // thermocouple settings
@@ -86,6 +86,7 @@ int tcLoopCount = 0;                  // counter to run serial output once every
 int  timeOn;                          // millis PWM is on out of total of timePeriod (timeOn = timePeriod for 100% power)
 unsigned long lastTimePeriod;         // millis since last turned on pwm
 int power = 100;                      //use as %, 100 is always on, 0 always off default 100
+int lastPowerInput = 100;
 
 int fan = 0;
 
@@ -184,16 +185,16 @@ void setPowerLevel(int p)
     // limitting power range by bean temperature
     if (controlBy == computer && pidMode == 1) {
       int minPower = 20; // default
-      int maxPower = 80; // default
-      if (t1 < 100.0) {
+      int maxPower = 100; // default
+      if (t1 < 90) {
         // using default minPower
-        maxPower = 55;
-      } else if (t1 < 140.0) {
-        minPower = 25;
         maxPower = 65;
-      } else if (t1 < 180.0) {
+      } else if (t1 < 130) {
+        minPower = 25;
+        maxPower = 80;
+      } else if (t1 < 160.0) {
         minPower = 30;
-        maxPower = 75;
+        maxPower = 90;
       } else {
         minPower = 35;
         // using default maxPower
@@ -201,8 +202,9 @@ void setPowerLevel(int p)
 
       // proportionally apply limitted power
       int powerRange = maxPower - minPower;
-      if(powerRange > -1 && powerRange < 101) {
-        p = powerRange * p / 100;
+      int limittedPower = minPower + (powerRange * p / 100);
+      if(limittedPower > -1 && limittedPower < 101) {
+        p = limittedPower;
       }
     }
 
@@ -262,7 +264,9 @@ void doInputCommand()
     //only set value if we have a valid positive number - atof will return 0.0 if invalid
     if (v >= 0)
     {
-      if (key.equals("power")  && controlBy == computer && v < 101){  
+      if (key.equals("power")  && controlBy == computer && v < 101){
+
+        lastPowerInput = (long) v;  
         
         setPowerLevel((long) v);//convert v to integer for power 
                 
@@ -463,6 +467,8 @@ void do250msLoop()
         }
         
         doSerialOutput(); // once per second
+
+        setPowerLevel(lastPowerInput); // update power level at least once per second
     }
     tcLoopCount++;
 
