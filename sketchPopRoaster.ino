@@ -199,11 +199,10 @@ void setPowerLevel(int p)
         // using default maxPower
       }
 
-      if (p < minPower) {
-        p = minPower;
-      }
-      if (p > maxPower) {
-        p = maxPower;
+      // proportionally apply limitted power
+      int powerRange = maxPower - minPower;
+      if(powerRange > -1 && powerRange < 101) {
+        p = powerRange * p / 100;
       }
     }
 
