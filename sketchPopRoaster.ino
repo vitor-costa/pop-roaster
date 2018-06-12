@@ -184,10 +184,13 @@ void setPowerLevel(int p)
     // limit power range to better ajustments
     // limitting power range by bean temperature
     if (controlBy == computer && pidMode == 1) {
-      int minPower = 20; // default
+      int minPower = 10; // default
       int maxPower = 100; // default
-      if (t1 < 90) {
+      if (t1 < 65) {
         // using default minPower
+        maxPower = 50;
+      } else if (t1 < 90) {
+        minPower = 20;
         maxPower = 65;
       } else if (t1 < 130) {
         minPower = 25;
@@ -196,7 +199,7 @@ void setPowerLevel(int p)
         minPower = 30;
         maxPower = 90;
       } else {
-        minPower = 35;
+        minPower = 50;
         // using default maxPower
       }
 
