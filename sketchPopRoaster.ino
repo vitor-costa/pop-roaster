@@ -12,7 +12,7 @@
 const int arduino = 0;                // either overridden if power pot is set below 97% to power pot control
 const int computer = 1;
 
-const int pidMode = 1; // On PID mode the power range is limited for better response; Turn PID mode off for manual control
+const int pidMode = 0; // On PID mode the power range is limited for better response; Turn PID mode off for manual control
 
 // if using only one thermocouple, PID data source is thermocouple 1
 // if using two thermocouples, PID data source is thermocouple 2
