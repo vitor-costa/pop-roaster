@@ -1,23 +1,9 @@
-
-#include <PID_v1.h>                // include the PID library
 #include "Max6675.h"
 
-#define CELSIUS //RoastLogger default is Celsius - To output data in Fahrenheit comment out this one line 
 #define DP 1  // No. decimal places for serial output
 
-#define maxLength 30                  // maximum length for strings used
+#define maxLength 30  // maximum length for strings used
 
-#define FAN_PIN 9 // pin used on mosfet gate that will control fan
-
-const int arduino = 0;                // either overridden if power pot is set below 97% to power pot control
-const int computer = 1;
-
-const int limittedPowerMode = 0; // On PID mode the power range is limited for better response; Turn PID mode off for manual control
-
-// if using only one thermocouple, PID data source is thermocouple 1
-// if using two thermocouples, PID data source is thermocouple 2
-// default to use one thermocouple
-const bool useSecondThermocouple = false;
 
 /****************************************************************************
  * 
@@ -30,12 +16,11 @@ const bool useSecondThermocouple = false;
  * 
  ****************************************************************************/
 
-// set pin numbers:
-const int pwmPin =  11;         // pin for pulse width modulation of heater
-
-// thermocouple reading Max 6675 pins
-Max6675 therm2(6, 7, 8);
-Max6675 therm1(3, 4, 5);
+const int fanPin = 9;  // pin used on mosfet gate that will control fan
+const int pwmPin = 11;  // pin for pulse width modulation of heater
+const int ssrVcc = 2;  // pin used for SSR VCC
+const int ssrGnd = 12;  // pin used for SSR GND
+Max6675 therm(3, 4, 5);  // thermocouple reading Max 6675 pins
 
 /****************************************************************************
  *  After setting the above pin assignments you can use the remainder of this
@@ -43,36 +28,18 @@ Max6675 therm1(3, 4, 5);
  * 
  ****************************************************************************/
 
-
 // time constants
 const int timePeriod = 400;           // total time period of PWM milliseconds see note on setupPWM before changing
 const int tcTimePeriod = 250;         // 250 ms loop to read thermocouples
 
-// thermocouple settings
-float calibrate1 = 0.0; // Temperature compensation for T1
-float calibrate2 = 0.0; // Temperature compensation for T2
-
-// PID variables - initial values just guesses, actual values set by computer
-double pidSetpoint, pidInput, pidOutput;
-double pidP = 20.0;
-double pidI = 45.0;
-double pidD = 10.0;
-
-//Specify the links and initial tuning parameters (last three are P I and D values)
-PID myPID(&pidInput, &pidOutput, &pidSetpoint, pidP, pidI, pidD, DIRECT);
-
-
-// set global variables
+// limited power mode
+const int limitedPowerMode = 0; // On limited power mode the power range is limited for better response; Turn PID mode off for manual control
 
 //temporary values for temperature to be read
-float temp1 = 0.0;                   // temporary temperature variable
-float temp2 = 0.0;                   // temporary temperature variable 
+float temp = 0.0;                   // temporary temperature variable
 float t1 = 0.0;                      // Last average temperature on thermocouple 1 - average of four readings
-float t2 = 0.0;                      // Last average temperature on thermocouple 2 - average of four readings
-float tCumulative1 = 0.0;            // cumulative total of temperatures read before averaged
-float tCumulative2 = 0.0;            // cumulative total of temperatures read before averaged
-int noGoodReadings1 = 0;             // counter of no. of good readings for average calculation 
-int noGoodReadings2 = 0;             // counter of no. of good readings for average calculation
+float tCumulative = 0.0;            // cumulative total of temperatures read before averaged
+int noGoodReadings = 0;             // counter of no. of good readings for average calculation
 
 int inByte = 0;                       // incoming serial byte
 String inString = String(maxLength);  // input String
@@ -90,100 +57,61 @@ int lastPowerInput = 100;
 
 int fan = 0;
 
-int controlBy = arduino;              // default is arduino control. PC sends "pccontrol" to gain control or
-                                      // swapped back to Arduino control if PC sends "arduinocontrol"
-
-void setup()
-{
-  
+/****************************************************************************
+ * General setup
+ ****************************************************************************/
+void setup() {
   // start serial port at 115200 baud:
   Serial.begin(115200);
-  // use establish contact if you want to wait until 'A' sent to Arduino before start - not used in this version
-  // establishContact();  // send a byte to establish contact until receiver responds 
+
   setupPWM();
  
-  //Set up pin VCC1, VCC2, GND2 and GNDRelé
-  pinMode(2, OUTPUT); digitalWrite(2, HIGH);
-  pinMode(12, OUTPUT); digitalWrite(12, LOW); // SSR rele -
+  //Set up pin VCC1, VCC2, GND2 and GND_SSR
+  pinMode(ssrVcc, OUTPUT); digitalWrite(ssrVcc, HIGH);
+  pinMode(ssrGnd, OUTPUT); digitalWrite(ssrGnd, LOW);
 
   //Set up fan pin
-  pinMode(FAN_PIN, OUTPUT); analogWrite(FAN_PIN, 0);
-
-  //set up the PID
-  pidInput = 0;                        // for testing start with temperature of 0
-  pidSetpoint = 222;                   // default if not connected to computer
-  myPID.SetOutputLimits(0,100);        // set output range 0 - 100 %
-  myPID.SetSampleTime(1000);           // set 1 second sample time for pID so it can react at a fast pace to pwm heater
-  //turn the PID on
-  myPID.SetMode(AUTOMATIC);
+  pinMode(fanPin, OUTPUT); analogWrite(fanPin, 0);
   
-  Serial.println("Reset");            // flag that Arduino has reset used for debugging 
+  Serial.println("Reset");  // flag that Arduino has reset used for debugging 
 }
 
 /****************************************************************************
- * Set up power pwm control for heater.  Hottop uses a triac that switches
- * only on zero crossing so normal pwm will not work.
- * Minimum time slice is a half cycle or 10 millisecs in UK.  
- * Loop in this prog may need up to 10 ms to complete.
- * I will use 20 millisecs as time slice with 100 power levels that
- * gives 2000 milliseconds total time period.
- * The Hottop heater is very slow responding so 2 sec period is not a problem.
+ * Heater setup
  ****************************************************************************/
 void setupPWM() {
   // set the digital pin as output:
   pinMode(pwmPin, OUTPUT);
 
-  //setup PWM
+  // setup PWM
   lastTimePeriod = millis();
   digitalWrite(pwmPin, LOW);//set PWM pin off to start
 }
 
-// this not currently used
-void establishContact() {
-  //  while (Serial.available() <= 0) {
-  //    Serial.print('A', BYTE);   // send a capital A
-  //    delay(300);
-  //  }
-  Serial.println("Opened but no contact yet - send A to start");
-  int contact = 0;
-  while (contact == 0){
-    if (Serial.available() > 0) {
-      inByte = Serial.read();
-      Serial.println(inByte);
-      if (inByte == 'A'){ 
-        contact = 1;
-        Serial.println("Contact established starting to send data");
-      }    
-    }
-  }  
-}
-
 /****************************************************************************
- * Toggles the heater on/off based on the current power level.  Power level
- * may be determined by arduino or computer.
+ * Toggles the heater on/off based on the current power level.
  ****************************************************************************/
-void doPWM()
-{
-  timeOn = timePeriod * power / 100; //recalc the millisecs on to get this power level, user may have changed
+void doPWM() {
+  timeOn = timePeriod * power / 100;  //recalc the millisecs on to get this power level, user may have changed
  
  if (millis() - lastTimePeriod > timePeriod) lastTimePeriod = millis();
- if (millis() - lastTimePeriod < timeOn){
-      digitalWrite(pwmPin, HIGH); // turn on
+
+ if (millis() - lastTimePeriod < timeOn) {
+      digitalWrite(pwmPin, HIGH);  // turn on
   } else {
-      digitalWrite(pwmPin, LOW); // turn off
+      digitalWrite(pwmPin, LOW);  // turn off
  }
  
 }
 
 /****************************************************************************
- * Called to set power level. Now always safe as hardware only turns heater on
- * if BOTH the Arduino AND the Hottop control board call for heat.
+ * Protected function to set heater power
+ * Also applies limited power feature if enabled
  ****************************************************************************/
-void setPowerLevel(int p)
-{
+void setPowerLevel(int p) {
     // limit power range to better ajustments
     // limitting power range by bean temperature
-    if (controlBy == computer && limittedPowerMode == 1) {
+    if (limitedPowerMode == 1) {
       int minPower = 15; // default
       int maxPower = 100; // default
       if (t1 < 65) {
@@ -220,21 +148,23 @@ void setPowerLevel(int p)
 }
 
 /****************************************************************************
- * Called to set fan power level.
+ * Protected function to set fan power
  ****************************************************************************/
-void setFanLevel(int p)
-{
+void setFanLevel(int p) {
    if (p > -1 && p < 101) fan = p;
 }
 
-void doFanAjustment()
-{
+/****************************************************************************
+ * Set fan power to reasonable values for bean rotation.
+ * Set fan off if zero power and work on a higher setting otherwise
+ ****************************************************************************/
+void doFanAjustment() {
    if (fan == 0) {
-      analogWrite(FAN_PIN, 0);
+      analogWrite(fanPin, 0);
    } else
    if (fan > 0 && fan <= 100) {
         double fanStep = 1.5;
-        analogWrite(FAN_PIN, 105 + (fanStep * fan));
+        analogWrite(fanPin, 105 + (fanStep * fan));
    }
 }
 
@@ -244,23 +174,12 @@ void doFanAjustment()
  * Performs commands and splits key and value 
  * and if key is defined sets value otherwise ignores
  ****************************************************************************/
-void doInputCommand()
-{
+void doInputCommand() {
   float v = -1;
   inString.toLowerCase();
   int indx = inString.indexOf('=');
 
-  if (indx < 0){  //this is a message not a key value pair
-
-    if (inString.equals("pccontrol")) {
-      controlBy = computer;      
-    } 
-    else if (inString.equals("arduinocontrol")) {
-      controlBy = arduino;        
-    }
-
-  } 
-  else {  //this is a key value pair for decoding
+  if (indx >= 0) {  //this is a key value pair for decoding
     String key = inString.substring(0, indx);
     String value = inString.substring(indx+1, inString.length());
 
@@ -270,33 +189,16 @@ void doInputCommand()
     v = atof (buf); 
  
     //only set value if we have a valid positive number - atof will return 0.0 if invalid
-    if (v >= 0)
-    {
-      if (key.equals("power")  && controlBy == computer && v < 101){
+    if (v >= 0) {
+      if (key.equals("power")) {
 
         lastPowerInput = (long) v;  
         
-        setPowerLevel((long) v);//convert v to integer for power 
+        setPowerLevel((long) v);  //convert v to integer for power 
                 
       } else
-      if (useSecondThermocouple && key.equals("sett2")){ // set PID setpoint to T2 value
-        pidSetpoint = v;
-        
-      } else
-      if (!useSecondThermocouple && key.equals("sett1")) { // set PID setpoint to T1 value
-        pidSetpoint = v;
-      } else
-      if (key.equals("pidp")) { 
-        pidP = v;
-      } else
-      if (key.equals("pidi")) { 
-        pidI = v;
-      } else
-      if (key.equals("pidd")) { 
-        pidD = v;
-      } else
       if (key.equals("fan")) {
-        setFanLevel((long) v); //convert v to integer for fan
+        setFanLevel((long) v);  //convert v to integer for fan
       }
     }
   }
@@ -307,9 +209,8 @@ void doInputCommand()
  * Instructions are terminated with \n \r or 'z' 
  * If this is the end of input line then call doInputCommand to act on it.
  ****************************************************************************/
-void getSerialInput()
-{
-  //check if data is coming in if so deal with it
+void getSerialInput() {
+  // check if data is coming in if so deal with it
   if (Serial.available() > 0) {
 
     // read the incoming data as a char:
@@ -320,163 +221,73 @@ void getSerialInput()
       //do whatever is commanded by the input string
       if (inString.length() > 0) doInputCommand();
       inString = "";        //reset for next line of input
-    } 
-    else {
+    } else {
       // if we are not at the end of the string, append the incoming character
       if (inString.length() < maxLength) {
-                inString += inChar; 
-
-      }
-      else {
-        // empty the string and set it equal to the incoming char:
-      //  inString = inChar;
-           inString = "";
-           inString += inChar;
+        inString += inChar;
+      } else {
+        // empty the string and set it equal to the incoming char
+        inString = "";
+        inString += inChar;
       }
     }
   }
 }
 
 /****************************************************************************
- * Send data to computer once every second.  Data such as temperatures,
- * PID setting etc.
- * This allows current settings to be checked by the controlling program
- * and changed if, and only if, necessary.
- * This is quicker that resending data from the controller each second
- * and the Arduino having to read and interpret the results.
+ * Sends data to Roastlogger
  ****************************************************************************/
-void doSerialOutput()
-{
+void doSerialOutput() {
   //send data to logger
-   
-  float tt1;
-  float tt2;
-  
-  #ifdef CELSIUS
-    tt1 = t1;
-    tt2 = t2;
-  #else
-    tt1 = (t1 * 9 / 5) + 32;
-    tt2 = (t2 * 9 / 5) + 32;
-  #endif   
-   
+
   Serial.print("t1=");
-  Serial.println(tt1,DP);
-
-  if (useSecondThermocouple) {
-    Serial.print("t2=");
-    Serial.println(tt2,DP);
-  }
-
-  if (controlBy == computer) {
-    // sending real heat power as t2 for reference
-    Serial.print("t2=");
-    Serial.println(power);
-  }
+  Serial.println(t1,DP);
 
   Serial.print("power%=");
   Serial.println(power);
 
   Serial.print("fan%=");
   Serial.println(fan);
-  
-
-  // only need to send these if Arduino controlling by PID
-  if (controlBy == arduino)
-  {
-    if (useSecondThermocouple) {
-      Serial.print("targett2=");
-      Serial.println(pidSetpoint,DP);
-    } else {
-      Serial.print("targett1=");
-      Serial.println(pidSetpoint,DP);
-    }
-
-    Serial.print("pidP=");
-    Serial.println(pidP,DP);
-
-    Serial.print("pidI=");
-    Serial.println(pidI,DP);
-
-    Serial.print("pidD=");
-    Serial.println(pidD,DP);
-  }
 }
 
 /****************************************************************************
- * Read temperatures from Max6675 chips Sets t1 and t2, -1 if an error
+ * Read temperatures from Max6675 chips Sets t1, -1 if an error
  * occurred.  Max6675 needs 240 ms between readings or will return last
  * value again. I am reading it once per second.
  ****************************************************************************/
-void getTemperatures()
-{
+void getTemperatures() {
  
- temp1 = therm1.getCelsius();
- temp2 = therm2.getCelsius();
+ temp = therm.getCelsius();
   
- if (temp1 > 0.0) 
- {
-    tCumulative1 = tCumulative1 + temp1;
-     noGoodReadings1 ++;
+ if (temp > 0.0) {
+    tCumulative = tCumulative + temp;
+     noGoodReadings ++;
  }
- if (temp2 > 0.0) 
- {
-    tCumulative2 = tCumulative2 + temp2;
-    noGoodReadings2 ++;
- }
-}
-
-/****************************************************************************
-* Purpose to adjust PID settings and compute new output value setting power
-* to pidOutput on exit
-****************************************************************************/
-void updatePID(){
-
-  if (useSecondThermocouple) {
-    pidInput = t2;
-  } else {
-    pidInput = t1;
-  }
-
-  myPID.SetTunings(pidP,pidI,pidD);
- 
-  myPID.Compute();
-
-  setPowerLevel(pidOutput); // range set in setup to 0 - 100%
 }
 
 /****************************************************************************
  * Called by main loop once every 250 ms
  * Used to read each thermocouple once every 250 ms
  *
- * Once per second averages temperature results, updates PID and outputs data
+ * Once per second averages temperature results and outputs data
  * to serial port.
  ****************************************************************************/
-void do250msLoop()
-{
+void do250msLoop() {
 
     getTemperatures();
            
-    if (tcLoopCount > 3)  // once every four loops (1 second) calculate average temp, update PID and do serial output
-    {
+    if (tcLoopCount > 3) {
+      // once every four loops (1 second) calculate average temp and do serial output
       
       tcLoopCount = 0;
       
-      if (noGoodReadings1 > 0)  t1 = tCumulative1 / noGoodReadings1; else t1 = -1.0;
-      if (noGoodReadings2 > 0)  t2 = tCumulative2 / noGoodReadings2; else t2 = -1.0;
-      noGoodReadings1 = 0;
-      noGoodReadings2 = 0;
-      tCumulative1 = 0.0;
-      tCumulative2 = 0.0;
+      if (noGoodReadings > 0)  t1 = tCumulative / noGoodReadings; else t1 = -1.0;
+      noGoodReadings = 0;
+      tCumulative = 0.0;
       
-      // only use PID if in Arduino control.  If Computer control power is set by computer
-        if (controlBy == arduino){
-          updatePID(); // set to execute once per 2 seconds in setup, just returns otherwise
-        }
-        
-        doSerialOutput(); // once per second
+      doSerialOutput();  // once per second
 
-        setPowerLevel(lastPowerInput); // update power level at least once per second
+      setPowerLevel(lastPowerInput);  // update power level at least once per second
     }
     tcLoopCount++;
 
@@ -489,18 +300,16 @@ void do250msLoop()
  * longer than planned. Not a big problem if 1% becomes 1.2%! But keep loop fast.
  * Currently loop takes about 4-5 ms to run so no problem.
  ****************************************************************************/
-void loop(){
+void loop() {
 
-  getSerialInput();// check if any serial data waiting
+  getSerialInput();  // check if any serial data waiting
 
-  // loop to run once every 250 ms to read TC's update PID etc.
-  if (millis() - lastTCTimerLoop >= 250)
-  {
+  // loop to run once every 250 ms
+  if (millis() - lastTCTimerLoop >= 250) {
     lastTCTimerLoop = millis();
     do250msLoop();  
   }
 
-  doPWM();        // Toggle heater on/off based on power setting
-  doFanAjustment(); // Set fan level according to value received from serial
-
+  doPWM();  // Toggle heater on/off based on power setting
+  doFanAjustment();  // Set fan level according to value received from serial
 }
