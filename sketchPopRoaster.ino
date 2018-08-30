@@ -17,8 +17,7 @@
  ****************************************************************************/
 
 const int fanPin = 9;  // pin used on mosfet gate that will control fan
-const int pwmPin = 11;  // pin for pulse width modulation of heater
-const int ssrVcc = 2;  // pin used for SSR VCC
+const int pwmPin = 11;  // pin for pulse width modulation of heater (SSR VCC)
 const int ssrGnd = 12;  // pin used for SSR GND
 Max6675 therm(3, 4, 5);  // thermocouple reading Max 6675 pins
 
@@ -65,10 +64,6 @@ void setup() {
   Serial.begin(115200);
 
   setupPWM();
- 
-  //Set up pin VCC1, VCC2, GND2 and GND_SSR
-  pinMode(ssrVcc, OUTPUT); digitalWrite(ssrVcc, HIGH);
-  pinMode(ssrGnd, OUTPUT); digitalWrite(ssrGnd, LOW);
 
   //Set up fan pin
   pinMode(fanPin, OUTPUT); analogWrite(fanPin, 0);
@@ -80,7 +75,10 @@ void setup() {
  * Heater setup
  ****************************************************************************/
 void setupPWM() {
-  // set the digital pin as output:
+  //Set up pin for GND_SSR
+  pinMode(ssrGnd, OUTPUT); digitalWrite(ssrGnd, LOW);
+
+  // set the digital pin as output (VCC_SSR)
   pinMode(pwmPin, OUTPUT);
 
   // setup PWM
