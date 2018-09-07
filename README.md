@@ -5,6 +5,12 @@ Controlling a popcorn popper using Arduino to roast great coffee.
 
 ## Release History
 
+###  Version 0.2.1
+
+ - Hardware protection by software:
+   - Limiting maximum temperature at 220ºC.
+   - Turn off heater if fan is set to zero.
+
 ### Version 0.2.0
 
  - New beta feature: heater limits by temperature for better automation (disabled by default).
