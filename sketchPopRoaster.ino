@@ -4,6 +4,8 @@
 
 #define maxLength 30  // maximum length for strings used
 
+#define maxTemperature 220  // maximum temperature for hardware protection
+
 
 /****************************************************************************
  * 
@@ -140,6 +142,16 @@ void setPowerLevel(int p) {
       if(limittedPower > -1 && limittedPower < 101) {
         p = limittedPower;
       }
+    }
+
+    // Hardware protection
+    // protection against fan failure - turn off heater if fan is off
+    if (fan == 0) {
+      p = 0;
+    }
+    // protection against high temperatures - turn off heater if temperature reaches limit
+    if (t1 > maxTemperature) {
+      p = 0;
     }
 
     if (p > -1 && p < 101) power = p;
