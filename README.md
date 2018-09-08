@@ -3,6 +3,8 @@ Disclaimer: the initial code is not mine, but I don't know the ownership of ever
 # Pop Roaster
 Controlling a popcorn popper using Arduino to roast great coffee.
 
+To get more information about the project and details how to build the roaster, read my personal blog on Medium (it's in PT-BR): https://medium.com/@relatos.cafe
+
 ## Release History
 
 ###  Version 0.3.0
