@@ -5,6 +5,11 @@ Controlling a popcorn popper using Arduino to roast great coffee.
 
 ## Release History
 
+###  Version 0.3.0
+
+ - Remove beta feature: heater limits by temperature. I figured out that it's better to control
+ heater using only PID with decent configuration.
+
 ###  Version 0.2.1
 
  - Hardware protection by software:
