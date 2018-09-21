@@ -30,8 +30,8 @@ Max6675 therm(3, 4, 5);  // thermocouple reading Max 6675 pins
  ****************************************************************************/
 
 // time constants
-const int timePeriod = 400;           // total time period of PWM milliseconds see note on setupPWM before changing
-const int tcTimePeriod = 250;         // 250 ms loop to read thermocouples
+const int timePeriod = 200;           // total time period of PWM milliseconds see note on setupPWM before changing
+const int tcTimePeriod = 200;         // 200 ms loop to read thermocouples
 
 //temporary values for temperature to be read
 float temp = 0.0;                   // temporary temperature variable
@@ -45,7 +45,7 @@ String inString = String(maxLength);  // input String
 
 // loop control variables
 unsigned long lastTCTimerLoop;        // for timing the thermocouple loop
-int tcLoopCount = 0;                  // counter to run serial output once every 4 loops of 250 ms t/c loop
+int tcLoopCount = 0;                  // counter to run serial output once every 1 sec of t/c iterations
 
 // PWM variables
 int  timeOn;                          // millis PWM is on out of total of timePeriod (timeOn = timePeriod for 100% power)
@@ -238,13 +238,12 @@ void getTemperatures() {
 }
 
 /****************************************************************************
- * Called by main loop once every 250 ms
- * Used to read each thermocouple once every 250 ms
+ * Used to read thermocouple
  *
  * Once per second averages temperature results and outputs data
  * to serial port.
  ****************************************************************************/
-void do250msLoop() {
+void doThermocoupleLoop() {
 
     getTemperatures();
            
@@ -276,10 +275,9 @@ void loop() {
 
   getSerialInput();  // check if any serial data waiting
 
-  // loop to run once every 250 ms
-  if (millis() - lastTCTimerLoop >= 250) {
+  if (millis() - lastTCTimerLoop >= tcTimePeriod) {
     lastTCTimerLoop = millis();
-    do250msLoop();  
+    doThermocoupleLoop();  
   }
 
   doPWM();  // Toggle heater on/off based on power setting
