@@ -106,6 +106,14 @@ void doPWM() {
  * Also applies limited power feature if enabled
  ****************************************************************************/
 void setPowerLevel(int p) {
+    // SSR change state delay compensation
+    // This delay may take up to 20ms, so if the power is too low or too high just round it.
+    if (p < 5) {
+      p = 0;
+    }
+    if (p > 95) {
+      p = 100;
+    }
     // Hardware protection
     // protection against fan failure - turn off heater if fan is off
     if (fan == 0) {
