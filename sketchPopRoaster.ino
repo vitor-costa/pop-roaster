@@ -33,6 +33,9 @@ Max6675 therm(3, 4, 5);  // thermocouple reading Max 6675 pins
 const int timePeriod = 200;           // total time period of PWM milliseconds see note on setupPWM before changing
 const int tcTimePeriod = 200;         // 200 ms loop to read thermocouples
 
+// limited power mode
+const int limitedPowerMode = 0; // On limited power mode the power range is limited for better response; Turn PID mode off for manual control
+
 //temporary values for temperature to be read
 float temp = 0.0;                   // temporary temperature variable
 float t1 = 0.0;                      // Last average temperature on thermocouple 1 - average of four readings
@@ -106,6 +109,40 @@ void doPWM() {
  * Also applies limited power feature if enabled
  ****************************************************************************/
 void setPowerLevel(int p) {
+    // limit power range to better ajustments
+    // limitting power range by bean temperature
+    if (limitedPowerMode == 1) {
+      int minPower = 15; // default
+      int maxPower = 100; // default
+      if (t1 < 65) {
+        // between 0-65
+        // using default minPower
+        maxPower = 45;
+      } else if (t1 < 90) {
+        // between 65-90
+        minPower = 25;
+        maxPower = 65;
+      } else if (t1 < 130) {
+        // between 90-130
+        minPower = 40;
+        maxPower = 80;
+      } else if (t1 < 160.0) {
+        // between 130-160
+        minPower = 50;
+        maxPower = 90;
+      } else {
+        // 160 and beyond
+        minPower = 65;
+        // using default maxPower
+      }
+
+      // proportionally apply limitted power
+      int powerRange = maxPower - minPower;
+      int limittedPower = minPower + (powerRange * p / 100);
+      if(limittedPower > -1 && limittedPower < 101) {
+        p = limittedPower;
+      }
+    }
     // SSR change state delay compensation
     // This delay may take up to 20ms, so if the power is too low or too high just round it.
     if (p < 5) {
