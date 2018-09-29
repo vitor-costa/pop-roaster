@@ -34,7 +34,7 @@ const int timePeriod = 200;           // total time period of PWM milliseconds s
 const int tcTimePeriod = 200;         // 200 ms loop to read thermocouples
 
 // limited power mode
-const int limitedPowerMode = 0; // On limited power mode the power range is limited for better response; Turn PID mode off for manual control
+const int limitedPowerMode = 1; // On limited power mode the power range is limited for better response; It should be ok to use the limited power mode on manual roasts, but the heater power turning of will be delayed by a few seconds.
 
 // temporary values for temperature to be read
 float temp = 0.0;                   // temporary temperature variable
