@@ -109,8 +109,8 @@ void doPWM() {
  * Also applies limited power feature if enabled
  ****************************************************************************/
 void setPowerLevel(int p) {
-    // limit power range to better ajustments
-    // limitting power range by bean temperature
+    // Limit power range to better ajustments
+    // Limiting power range by bean temperature
     if (limitedPowerMode == 1) {
       int minPower = 15; // default
       int maxPower = 100; // default
@@ -136,11 +136,11 @@ void setPowerLevel(int p) {
         // using default maxPower
       }
 
-      // proportionally apply limitted power
+      // Proportionally apply limited power
       int powerRange = maxPower - minPower;
-      int limittedPower = minPower + (powerRange * p / 100);
-      if(limittedPower > -1 && limittedPower < 101) {
-        p = limittedPower;
+      int limitedPower = minPower + (powerRange * p / 100);
+      if(limitedPower > -1 && limitedPower < 101) {
+        p = limitedPower;
       }
     }
     // SSR change state delay compensation
