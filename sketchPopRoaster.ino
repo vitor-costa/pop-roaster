@@ -36,7 +36,7 @@ const int tcTimePeriod = 200;         // 200 ms loop to read thermocouples
 // limited power mode
 const int limitedPowerMode = 0; // On limited power mode the power range is limited for better response; Turn PID mode off for manual control
 
-//temporary values for temperature to be read
+// temporary values for temperature to be read
 float temp = 0.0;                   // temporary temperature variable
 float t1 = 0.0;                      // Last average temperature on thermocouple 1 - average of four readings
 float tCumulative = 0.0;            // cumulative total of temperatures read before averaged
@@ -55,6 +55,8 @@ int  timeOn;                          // millis PWM is on out of total of timePe
 unsigned long lastTimePeriod;         // millis since last turned on pwm
 int power = 100;                      //use as %, 100 is always on, 0 always off default 100
 int lastPowerInput = 100;
+unsigned long lastTimePowerZero;  // Last time the power was set to zero
+
 
 int fan = 0;
 
@@ -137,6 +139,10 @@ void setPowerLevel(int p) {
         p = limitedPower;
       }
     }
+    // Turning heater off if zero was set long enough not to be a PID value
+    if (lastPowerInput == 0 && lastTimePowerZero > 5000) {
+      p = 0;
+    }
     // SSR change state delay compensation
     // This delay may take up to 20ms, so if the power is too low or too high just round it.
     if (p < 5) {
@@ -203,7 +209,10 @@ void doInputCommand() {
     if (v >= 0) {
       if (key.equals("power")) {
 
-        lastPowerInput = (long) v;  
+        lastPowerInput = (long) v;
+        if (lastPowerInput == 0) {
+          lastTimePowerZero = millis();
+        }
         
         setPowerLevel((long) v);  //convert v to integer for power 
                 
