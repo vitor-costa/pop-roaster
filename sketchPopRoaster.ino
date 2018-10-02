@@ -140,7 +140,7 @@ void setPowerLevel(int p) {
       }
     }
     // Turning heater off if zero was set long enough not to be a PID value
-    if (lastPowerInput == 0 && lastTimePowerZero > 5000) {
+    if (lastPowerInput == 0 && millis() - lastTimePowerZero > 5000) {
       p = 0;
     }
     // SSR change state delay compensation
