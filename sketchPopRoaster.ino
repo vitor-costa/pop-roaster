@@ -209,12 +209,12 @@ void doInputCommand() {
     if (v >= 0) {
       if (key.equals("power")) {
 
-        lastPowerInput = (long) v;
+        lastPowerInput = (int) v;
         if (lastPowerInput == 0) {
           lastTimePowerZero = millis();
         }
         
-        setPowerLevel((long) v);  //convert v to integer for power 
+        setPowerLevel((int) v);  //convert v to integer for power
                 
       } else
       if (key.equals("fan")) {
