@@ -120,10 +120,10 @@ void setPowerLevel(int p) {
         // Using default minPower - do nothing
       } else if (t1 < 90) {
         // Between 65-90
-        minPower = 20;
+        minPower = 12;
       } else if (t1 < 130) {
         // Between 90-130
-        minPower = 30;
+        minPower = 22;
       } else if (t1 < 160.0) {
         // Between 130-160
         minPower = 40;
@@ -325,7 +325,7 @@ void loop() {
 
   if (millis() - lastTCTimerLoop >= tcTimePeriod) {
     lastTCTimerLoop = millis();
-    doThermocoupleLoop();  
+    doThermocoupleLoop();
   }
 
   doPWM();  // Toggle heater on/off based on power setting
