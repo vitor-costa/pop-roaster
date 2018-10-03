@@ -6,6 +6,19 @@
 
 #define maxTemperature 220  // maximum temperature for hardware protection
 
+/*******************************************************************************
+ * LIMITED POWER MODE
+ *
+ * On limited power mode the power range is limited for better response on PID.
+ * It should be ok to use the limited power mode on manual roasts,
+ * but the heater power turning of will be delayed by a few seconds.
+ * Also it may cause abrupt changes on applied heat on manual or Actions mode.
+ *
+ * Turn on - 1
+ * Turn off - 0
+ *******************************************************************************/
+
+ const int limitedPowerMode = 0;
 
 /****************************************************************************
  * 
@@ -32,9 +45,6 @@ Max6675 therm(3, 4, 5);  // thermocouple reading Max 6675 pins
 // time constants
 const int timePeriod = 200;           // total time period of PWM milliseconds see note on setupPWM before changing
 const int tcTimePeriod = 200;         // 200 ms loop to read thermocouples
-
-// limited power mode
-const int limitedPowerMode = 1; // On limited power mode the power range is limited for better response; It should be ok to use the limited power mode on manual roasts, but the heater power turning of will be delayed by a few seconds.
 
 // temporary values for temperature to be read
 float temp = 0.0;                   // temporary temperature variable
