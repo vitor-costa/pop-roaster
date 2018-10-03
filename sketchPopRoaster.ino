@@ -115,25 +115,31 @@ void setPowerLevel(int p) {
     // Limiting power range by bean temperature
     if (limitedPowerMode == 1) {
       int minPower = 10; // default
+      int maxPower = 100; // default
       if (t1 < 65) {
         // Up to 65
-        // Using default minPower - do nothing
+        // Using default minPower
+        maxPower = 45;
       } else if (t1 < 90) {
         // Between 65-90
-        minPower = 12;
+        // Using default minPower
+        maxPower = 65;
       } else if (t1 < 130) {
         // Between 90-130
         minPower = 22;
+        maxPower = 80;
       } else if (t1 < 160.0) {
         // Between 130-160
         minPower = 40;
+        maxPower = 90;
       } else {
         // 160 and beyond
         minPower = 50;
+        // using default maxPower
       }
 
       // Proportionally apply limited power
-      int powerRange = 100 - minPower;
+      int powerRange = maxPower - minPower;
       int limitedPower = minPower + (powerRange * p / 100);
       if(limitedPower > -1 && limitedPower < 101) {
         p = limitedPower;
