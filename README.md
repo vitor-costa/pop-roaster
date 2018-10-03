@@ -7,6 +7,11 @@ To get more information about the project and details how to build the roaster, 
 
 ## Release History
 
+###  Version 0.4.0
+
+ - Lowering heater and thermocouple cycle time.
+ - Bringing back limited power mode. Used with a good PID configuration brings an excellent result. Turned OFF by default.
+
 ###  Version 0.3.0
 
  - Remove beta feature: heater limits by temperature. I figured out that it's better to control
